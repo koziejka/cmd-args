@@ -47,7 +47,7 @@ const urlTestRule = /(?:(\w+):\/\/)?[-A-Za-z0-9+&@#\/%?=~_|!:,.;]+[-A-Za-z0-9+&@
  */
 const url = (args = {}) => state => {
     if (state.success === false) return state
-
+    
     const protocols = args.protocols || ['http', 'https', 'ftp', 'file']
     const requireProtocol = args.requireProtocol === undefined ? true : args.requireProtocol
 
@@ -71,21 +71,20 @@ const url = (args = {}) => state => {
 
 /**
  * @author koziejka
- * @version 1.0.0
+ * @version 1.0.1
  */
-const str = (...str) => state => {
+const str = str => state => {
     if (state.success === false) return state
 
-    let success = str.every((val, i) => state.input[i] === val)
-    if (success)
+    if (state.input[0] === str)
         return {
-            success,
-            input: state.input.slice(str.length),
+            success: true,
+            input: state.input.slice(1),
             return: str,
             args: state.args
         }
     else return {
-        success,
+        success: false,
         input: state.input,
         return: null,
         args: state.args
@@ -115,24 +114,32 @@ const regex = (regex, group = 0) => state => {
 }
 
 /**
- * @todo implement
+ * @version 1.0.0
+ * @update koziejka
  */
-const number = () => state => {
+const number = (args = {}) => state => {
     if (state.success === false) return state
-    const tmp = Number(state.input[0])
-    if (tmp !== NaN) {
-        return {
-            success: true,
-            input: state.input.slice(1),
-            return: Number(state.input[0]),
-            args: state.args
-        }
-    } else return {
+
+    const base = Number(args.base === undefined ? 10 : args.base)
+    const int = Boolean(args.int || args.base)
+
+    let tmp = int ? parseInt(state.input[0], base) : Number(state.input[0])
+
+    if (int && /[,.]/.test(state.input[0])) tmp = NaN
+
+    if ((tmp !== 0 && !tmp)) return {
         success: false,
         input: state.input,
         return: null,
         args: state.args
     }
+    return {
+        success: true,
+        input: state.input.slice(1),
+        return: tmp,
+        args: state.args
+    }
+
 }
 
-module.exports = { path, url, str, regex }
+module.exports = { path, url, str, regex, number }
